@@ -1,66 +1,16 @@
 ---
-- name: Déploiement de l'application web avec Docker et Nginx
+- name: Créer un utilisateur dans PostgreSQL
   hosts: all
   become: true
 
-  tasks:
-    - name: Installation des dépendances Docker
-      apt:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - docker.io
-        - docker-compose
-
-    - name: Copie du code source de l'application
-      copy:
-        src: /chemin/vers/le/code/source
-        dest: /var/www/html/app
-
-    - name: Déploiement de l'application avec Docker Compose
-      command: docker-compose up -d
-      args:
-        chdir: /var/www/html/app
-
-- name: Configuration de l'équilibreur de charge
-  hosts: load_balancer
-  become: true
+  vars:
+    postgres_user: "mayssa"
+    postgres_password: "mayssa"
 
   tasks:
-    - name: Installation de HAProxy
-      apt:
-        name: haproxy
-        state: present
-
-    - name: Configuration du fichier HAProxy
-      template:
-        src: haproxy.cfg.j2
-        dest: /etc/haproxy/haproxy.cfg
-      notify: Reload HAProxy
-
-  handlers:
-    - name: Reload HAProxy
-      service:
-        name: haproxy
-        state: reloaded
-
-- name: Mise à jour de la configuration Nginx sur les serveurs web
-  hosts: serveurs_web
-  become: true
-
-  tasks:
-    - name: Récupération de la liste des conteneurs en cours d'exécution
-      command: docker ps --format '{{.Names}}'
-      register: running_containers
-
-    - name: Mise à jour de la configuration Nginx
-      template:
-        src: nginx.conf.j2
-        dest: /etc/nginx/nginx.conf
-      notify: Reload Nginx
-
-  handlers:
-    - name: Reload Nginx
-      service:
-        name: nginx
-        state: reloaded
+    - name: Création de l'utilisateur dans PostgreSQL
+      postgresql_user:
+        db: my_database
+        name: "{{ postgres_user }}"
+        password: "{{ postgres_password }}"
+        priv: ALL
